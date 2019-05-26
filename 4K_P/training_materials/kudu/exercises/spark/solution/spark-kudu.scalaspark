@@ -1,0 +1,43 @@
+// $ spark2-shell --packages org.apache.kudu:kudu-spark2_2.11:1.5.0
+
+import org.apache.kudu.spark.kudu._
+import org.apache.kudu.client._
+
+val kuduMaster = "master-2:7051"
+
+// Create a DataFrame based on an existing Kudu table
+val accountsDF = spark.read.format("org.apache.kudu.spark.kudu").option("kudu.master",kuduMaster).option("kudu.table","impala::loudacre_kudu.accounts_kudu").load
+// Alternate using covenience load function 
+// val accountsDF = spark.read.option("kudu.master",kuduMaster).option("kudu.table","impala::loudacre_kudu.accounts_kudu").kudu
+accountsDF.printSchema
+accountsDF.show(5)
+
+
+// Query a Kudu table using SQL
+accountsDF.createTempView("accounts_view")
+val namesDF = spark.sql("SELECT acct_num, first_name, last_name FROM accounts_view")
+namesDF.show(5)
+
+// Create a new table
+
+import collection.JavaConverters._
+
+val kc = new KuduContext(kuduMaster,sc)
+
+val namesTableOptions = new CreateTableOptions().addHashPartitions(List("acct_num").asJava, 2)
+kc.createTable("account_names_kudu", namesDF.schema, List("acct_num"), namesTableOptions)
+
+// Write to the new table
+
+namesDF.write.option("kudu.master",kuduMaster).format("org.apache.kudu.spark.kudu").option("kudu.table","account_names_kudu").mode("append").save
+// Alternate command using kudu convenience function
+// namesDF.write.option("kudu.master",kuduMaster).option("kudu.table","account_names_kudu").mode("append").kudu
+
+// If necessary:
+// $  kudu table delete master-2:7051 account_names_kudu 
+// Create a matching Impala table
+// DROP TABLE IF EXISTS loudacre_kudu.account_names_kudu;
+// CREATE EXTERNAL TABLE loudacre_kudu.account_names_kudu STORED AS KUDU TBLPROPERTIES('kudu.table_name' = 'account_names_kudu');
+val testDF = spark.read.format("org.apache.kudu.spark.kudu").option("kudu.master",kuduMaster).option("kudu.table","account_names_kudu").load()
+testDF.printSchema
+testDF.show(5)

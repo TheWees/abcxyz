@@ -1,0 +1,37 @@
+// $ hdfs dfs -put $DEVDATA/activations /loudacre
+
+// Stub code to copy into Spark Shell
+
+import scala.xml._
+
+// Given a string containing XML, parse the string, and 
+// return an iterator of activation XML records (Nodes) contained in the string
+
+def getActivations(xmlstring: String): Iterator[Node] = {
+    val nodes = XML.loadString(xmlstring) \\ "activation"
+    nodes.toIterator
+}
+
+// Given an activation record (XML Node), return the model name
+def getModel(activation: Node): String = {
+   (activation \ "model").text
+}
+
+// Given an activation record (XML Node), return the account number
+def getAccount(activation: Node): String = {
+   (activation \ "account-number").text
+}
+
+// Exercise Solution
+// Load activation XML files
+val files="/loudacre/activations"    
+val activationFiles = sc.wholeTextFiles(files)
+
+// Parse each file (as a string) into a collection of activation XML records
+val activationTrees = activationFiles.flatMap(pair => getActivations(pair._2))
+
+// Map each activation record to (account-number, model name)
+val models = activationTrees.map(record => getAccount(record) + ":" + getModel(record))
+
+// Save the data to a file
+models.saveAsTextFile("/loudacre/account-models")

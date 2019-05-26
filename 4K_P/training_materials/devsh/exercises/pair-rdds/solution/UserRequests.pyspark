@@ -1,0 +1,31 @@
+# hdfs dfs -put $DEVDATA/weblogs /loudacre/
+
+# Create an RDD based on a subset of weblogs (those ending in digit 2)
+logsRDD = sc.textFile("/loudacre/weblogs/*2.log")
+
+# map each request (line) to a pair (userid, 1), then sum the values
+userReqsRDD = logsRDD.map(lambda line: line.split(' ')) .map(lambda words: (words[2],1)) .reduceByKey(lambda count1,count2: count1 + count2)
+   
+# Show the count frequencies
+freqCountMap = userReqsRDD.map(lambda (userid,freq): (freq,userid)).countByKey()
+print freqCountMap
+
+# Group IPs by user ID
+userIPsRDD = logsRDD .map(lambda line: line.split(' ')).map(lambda words: (words[2],words[0])) .groupByKey()
+
+# print out the first 10 user ids, and their IP list
+for (userid,ips) in userIPsRDD.take(10):
+   print userid, ":"
+   for ip in ips: print "\t",ip
+
+# Map account data to (userid,[values....])
+accountsData = "/user/hive/warehouse/accounts"
+accountsRDD = sc.textFile(accountsData).map(lambda s: s.split(',')).map(lambda account: (account[0],account))
+
+# Join account data with userreqs then merge hit count into valuelist   
+accountHitsRDD = accountsRDD.join(userReqsRDD)
+
+# Display userid, hit count, first name, last name for the first 5 elements
+for (userid,(values,count)) in accountHitsRDD.take(5) : 
+    print  userid, count, values[3], values[4]
+   

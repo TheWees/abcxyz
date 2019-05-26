@@ -1,0 +1,5 @@
+// Stub: query setup
+val accountsDF = spark.read.table("accounts")
+val activeAccountsDF = accountsDF.select("acct_num").where(accountsDF("acct_close_dt").isNotNull)
+val accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+val accountsDevsDF =  accountsDF.join(accountDeviceDF,$"account_id"=== $"acct_num")

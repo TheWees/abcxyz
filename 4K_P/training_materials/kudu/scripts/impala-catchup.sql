@@ -1,0 +1,38 @@
+-- Impala exercise catch-up commands
+
+  
+-- Impala exercise solution
+
+-- Create a table based on existing Impala table
+  
+DROP TABLE IF EXISTS loudacre_kudu.accounts_kudu; 
+CREATE TABLE loudacre_kudu.accounts_kudu 
+  PRIMARY KEY (acct_num)
+  PARTITION BY HASH PARTITIONS 2
+  STORED AS KUDU
+  AS SELECT * FROM loudacre_kudu.accounts_hive;
+
+-- Create a table with a composite key
+
+DROP TABLE IF EXISTS loudacre_kudu.devices_composite;
+CREATE TABLE loudacre_kudu.devices_composite 
+  PRIMARY KEY (make,model)
+  PARTITION BY HASH (model) PARTITIONS 2
+  STORED AS KUDU
+  AS SELECT make,model,devnum,released,dev_type 
+    FROM loudacre_kudu.devices_hive;
+
+-- Create a table partitioned by date range
+DROP TABLE IF EXISTS loudacre_kudu.devices_range; 
+CREATE TABLE loudacre_kudu.devices_range 
+  PRIMARY KEY (devnum,rel_year)
+  PARTITION BY RANGE(rel_year) (
+  	PARTITION VALUES < 2016,
+  	PARTITION 2016 <= VALUES < 2017,
+  	PARTITION 2017 <= VALUES < 2018,
+  	PARTITION 2018 <= VALUES < 2019
+  )  
+  STORED AS KUDU
+  AS SELECT devnum,YEAR(released) as rel_year,released,make,model,dev_type 
+    FROM loudacre_kudu.devices_hive;
+    

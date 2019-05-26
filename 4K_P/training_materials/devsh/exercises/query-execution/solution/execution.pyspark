@@ -1,0 +1,54 @@
+# RDD query execution
+
+accountsRDD = sc.textFile("/user/hive/warehouse/accounts").map(lambda line: line.split(',')).map(lambda accountFields: (accountFields[0],accountFields))
+accountsRDD.getNumPartitions()
+print accountsRDD.toDebugString()
+accountsRDD.count()
+
+logsRDD = sc.textFile("/loudacre/weblogs")
+userReqsRDD = logsRDD.map(lambda line: line.split(' ')).map(lambda words: (words[2],1)). reduceByKey(lambda v1,v2: v1 + v2)
+accountHitsRDD = accountsRDD.join(userReqsRDD)
+accountHitsRDD.saveAsTextFile("/loudacre/account_hits")
+   
+# DataFrame query execution
+
+# ------query for active accounts --------
+accountsDF = spark.read.table("accounts")
+activeAccountsDF = accountsDF.select("acct_num").where(accountsDF.acct_close_dt.isNotNull())
+activeAccountsDF.show()
+
+# ------ Load account device data ---------
+
+# Create a DataFrame from the account device data
+accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+accountDeviceDF.explain(True)
+accountDeviceDF.show(5)
+
+# -------- query for device IDs for active accounts
+
+
+# Create a DataFrame with a device model IDs for only devices 
+# used by unclosed accounts
+activeAcctDevsDF =  activeAccountsDF.join(accountDeviceDF,activeAccountsDF.acct_num == accountDeviceDF.account_id).select("device_id")
+activeAcctDevsDF.explain(True)
+activeAcctDevsDF.write.mode("overwrite").save("/loudacre/active_account_devices")
+
+# ---------------------------
+# Optional: Query for a list of device IDs, makes, and models, and the 
+# number of active accounts that use that type of device, sorted 
+# in order from most popular device type to least.
+
+# Sum up the total number of each device model 
+sumDevicesDF = activeAcctDevsDF.groupBy("device_id").count().withColumnRenamed("count","active_num")
+
+# Order by count
+orderDevicesDF = sumDevicesDF.orderBy(sumDevicesDF.active_num.desc())
+
+# Join the list of device model totals with the list of devices
+# to get the make and model for each device
+devDF = spark.read.json("/loudacre/devices.json")
+joinDevicesDF = orderDevicesDF.join(devDF,sumDevicesDF.device_id == devDF.devnum)
+
+# Write out the data with the correct columns
+joinDevicesDF.select("device_id","make","model",joinDevicesDF.active_num).write.mode("overwrite").save("/loudacre/top_devices")
+

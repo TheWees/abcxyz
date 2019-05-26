@@ -1,0 +1,17 @@
+accountsdata = "/user/hive/warehouse/accounts"
+   
+# Bonus 1 - key accounts by postal/zip code
+accountsByPCode = sc.textFile(accountsdata) \
+   .map(lambda s: s.split(','))\
+   .keyBy(lambda account: account[8])
+ 
+ # Bonus 2 - map account data to lastname,firstname  
+namesByPCode = accountsByPCode\
+   .mapValues(lambda account: account[4] + ',' + account[3]) \
+   .groupByKey()
+
+# Bonus 3 - print the first 5 zip codes and list the names 
+for (pcode,names) in namesByPCode.sortByKey().take(5):
+   print "---" ,pcode
+   for name in names: print name
+

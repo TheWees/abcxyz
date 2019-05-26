@@ -1,0 +1,13 @@
+val accountsdata="/user/hive/warehouse/accounts"
+   
+// Bonus 1: key accounts by postal/zip code
+val accountsByPCode = sc.textFile(accountsdata).map(_.split(',')).keyBy(_(8))
+ 
+// Bonus 2: map account data to lastname,firstname  
+val namesByPCode = accountsByPCode.mapValues(values => values(4) + ',' + values(3)).groupByKey()
+
+// Bonus 3: print the first 5 zip codes and list the names 
+for (pair <- namesByPCode.sortByKey().take(5)) {
+   println("---" + pair._1)
+   pair._2.foreach(println)
+}

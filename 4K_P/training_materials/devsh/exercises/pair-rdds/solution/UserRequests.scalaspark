@@ -1,0 +1,32 @@
+// $ hdfs dfs -put $DEVDATA/weblogs /loudacre/
+
+// Create an RDD based on a subset of weblogs (those ending in digit 2)
+val logsRDD=sc.textFile("/loudacre/weblogs/*2.log")
+
+// map each request (line) to a pair (userid, 1) then sum the hits
+val userReqsRDD = logsRDD.map(line => line.split(' ')).map(words => (words(2),1)).reduceByKey((v1,v2) => v1 + v2)
+   
+// return a user count for each hit frequency
+val freqCountMap = userReqsRDD.map(pair => (pair._2,pair._1)).countByKey()
+
+// Group IPs by user ID
+val userIPs = logsRDD.map(line => line.split(' ')).map(words => (words(2),words(0))).groupByKey()
+
+// print out the first 10 user ids, and their IP list
+for (pair <- userIPs.take(10)) {
+   println(pair._1 + ":")
+   for (ip <- pair._2) println("\t"+ip)
+}
+
+// map account data to (userid,[values....])
+val accountsData="/user/hive/warehouse/accounts"
+val accountsRDD = sc.textFile(accountsData).map(line => line.split(',')).map(account => (account(0),account))
+   
+// Join account data with userReqsRDD then merge hit count into valuelist   
+val accountHitsRDD = accountsRDD.join(userReqsRDD)
+
+// Display userid, hit count, first name, last name for the first few elements
+for (pair <- accountHitsRDD.take(5)) {
+   printf("%s %s %s %s\n",pair._1,pair._2._2, pair._2._1(3),pair._2._1(4))
+}
+

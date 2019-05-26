@@ -1,0 +1,21 @@
+devDF = spark.read.json("/loudacre/devices.json")
+
+devDF.printSchema()
+
+devDF.show(5)
+
+rows = devDF.take(5)
+for row in rows: print row
+
+devDF.count()
+
+makeModelDF = devDF.select("make","model")
+makeModelDF.printSchema()
+
+makeModelDF.show()
+
+devDF.select("devnum","make","model").where("make = 'Ronin'").show()
+
+
+
+

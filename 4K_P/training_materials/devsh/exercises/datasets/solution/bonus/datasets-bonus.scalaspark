@@ -1,0 +1,10 @@
+// Create a case class for user IDs and IP addresses
+case class AccountIP (id: Int, ip: String)
+
+val accountIPRDD=sc.textFile("/loudacre/weblogs").map(line => line.split(' ')).map(fields => new AccountIP(fields(2).toInt,fields(0)))
+
+val accountIPDS = spark.createDataset(accountIPRDD)
+accountIPDS.createOrReplaceTempView("account_ip")
+val queryDF = spark.sql("SELECT DISTINCT *  FROM account_ip WHERE id < 200")
+queryDF.printSchema
+queryDF.show

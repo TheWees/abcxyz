@@ -1,0 +1,45 @@
+// Upload data files to HDFS before running solution
+// $hdfs dfs -put $DEVDATA/weblogs/ /loudacre/
+
+// create an RDD based on the web log data files
+val logsRDD = sc.textFile("/loudacre/weblogs")
+
+// display the first 10 lines which are requests for JPG files
+val jpglogsRDD=logsRDD.filter(line => line.contains(".jpg"))
+val jpgLines = jpglogsRDD.take(5)
+jpgLines.foreach(println)
+
+// display the JPG requests, this time using a single command line
+sc.textFile("/loudacre/weblogs").filter(line => line.contains(".jpg")).count
+
+// Create an RDD of the length of each line in the file and display the first 5 line lengths
+val lineLengthsRDD = logsRDD.map(line => line.length)
+lineLengthsRDD.take(5).foreach(println)
+
+// Map the log data to an RDD of arrays of the fields on each line
+val lineFieldsRDD = logsRDD.map(line => line.split(' '))
+val lineFields = lineFieldsRDD.take(5)
+for (fields <- lineFields) {
+  println("-------")
+  fields.foreach(println)
+}
+
+// Map the log data to an RDD of IP addresses for each line 
+val ipsRDD = logsRDD.map(line => line.split(' ')(0))
+ipsRDD.take(5).foreach(println)
+
+// Loop through the array returned by take
+ipsRDD.take(10).foreach(println)
+
+// Save the IP addresses to text file(s)
+ipsRDD.saveAsTextFile("/loudacre/iplist/")
+
+
+// Save "ip-address,user-id" 
+var userIPRDD=logsRDD.filter(_.contains(".html")).map(line => line.split(' ')(0) + "," + line.split(' ')(2))
+userIPRDD.saveAsTextFile("/loudacre/userips_csv")
+
+// Read into a DataFrame
+val useripsDF = spark.read.option("inferSchema","true").csv("/loudacre/userips_csv")
+useripsDF.printSchema
+useripsDF.show

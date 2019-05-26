@@ -1,0 +1,32 @@
+for table in spark.catalog.listTables(): 
+  print table
+
+for column in spark.catalog.listColumns("accounts"): 
+   print column
+
+accountsDF = spark.read.table("accounts")
+accountsDF.printSchema()
+
+firstLastDF = spark.sql("SELECT first_name,last_name FROM accounts")
+firstLastDF.printSchema()
+firstLastDF.show(5)
+
+firstLastDF2 = accountsDF.select("first_name","last_name")
+firstLastDF2.printSchema()
+firstLastDF2.show(5)
+
+accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+
+accountDeviceDF.createOrReplaceTempView("account_dev")
+
+for table in spark.catalog.listTables(): print table
+
+spark.sql("SELECT * FROM account_dev LIMIT 5").show()
+
+nameDevDF = spark.sql("SELECT acct_num, first_name, last_name, account_device_id FROM accounts JOIN account_dev ON acct_num = account_id")
+nameDevDF.show()
+
+nameDevDF.write.option("path","/loudacre/name_dev").saveAsTable("name_dev")
+
+for table in spark.catalog.listTables(): print table
+spark.sql("DESCRIBE name_dev").show()

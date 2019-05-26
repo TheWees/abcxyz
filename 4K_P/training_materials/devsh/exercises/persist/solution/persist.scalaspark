@@ -1,0 +1,21 @@
+// Stub: query setup
+val accountsDF = spark.read.table("accounts")
+val activeAccountsDF = accountsDF.select("acct_num").where(accountsDF("acct_close_dt").isNotNull)
+val accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+val accountsDevsDF =  accountsDF.join(accountDeviceDF,$"account_id"=== $"acct_num")
+
+// Solution
+
+// Compare the Execution Plans of Persisted and Unpersisted Queries
+accountsDevsDF.select("acct_num","first_name","last_name","device_id").show(5)
+accountsDevsDF.persist
+accountsDevsDF.select("acct_num","first_name","last_name","device_id").show(5)
+
+// View Storage for Persisted Queries
+accountsDevsDF.write.mode("overwrite").save("/loudacre/accounts_devices")
+
+// Change the Storage Level for the Query
+accountsDevsDF.unpersist()
+import org.apache.spark.storage.StorageLevel
+accountsDevsDF.persist(StorageLevel.DISK_ONLY_2)
+accountsDevsDF.write.mode("overwrite").save("/loudacre/accounts_devices")

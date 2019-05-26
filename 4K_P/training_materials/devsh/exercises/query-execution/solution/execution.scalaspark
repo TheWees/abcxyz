@@ -1,0 +1,57 @@
+// ----- RDD query execution -----
+
+val accountsRDD = sc. textFile("/user/hive/warehouse/accounts"). map(line => line.split(',')).map(accountFields => (accountFields(0),accountFields))
+accountsRDD.getNumPartitions
+accountsRDD.toDebugString
+accountsRDD.count
+
+val logsRDD =sc.textFile("/loudacre/weblogs")
+val userReqsRDD = logsRDD.map(line => line.split(' ')).map(words => (words(2),1)).reduceByKey((v1,v2) => v1 + v2)
+val accountHitsRDD = accountsRDD.join(userReqsRDD)
+accountHitsRDD.saveAsTextFile("/loudacre/account_hits")
+   
+// ----- DataFrame query execution ---------------------
+val accountsDF = spark.read.table("accounts")
+
+// query for active accounts
+val activeAccountsDF = accountsDF.select("acct_num").where($"acct_close_dt".isNotNull)
+
+activeAccountsDF.explain(true)
+activeAccountsDF.show(5)
+
+// ------ Load account device data ---------
+
+// Create a DataFrame from the account device data
+val accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+
+// -------- query for device IDs for active accounts
+
+// Create a DataFrame with a device model IDs for only devices 
+// used by unclosed accounts
+val activeAcctDevsDF =  activeAccountsDF.join(accountDeviceDF,$"acct_num" === $"account_id").select($"device_id")
+activeAcctDevsDF.explain(true)
+activeAcctDevsDF.write.mode("overwrite").save("/loudacre/active_account_devices")
+
+
+// ---------------------------
+// Optional: Query for a list of device IDs, makes, and models, and the 
+// number of active accounts that use that type of device, sorted 
+// in order from most popular device type to least.
+
+// Sum up the total number of each device model 
+val sumDevicesDF = activeAcctDevsDF.groupBy("device_id").count().withColumnRenamed("count","active_num")
+
+// Order by count
+val orderDevicesDF = sumDevicesDF.orderBy($"active_num".desc)
+
+// create a DataFrame based on the devices.json file
+val devDF = spark.read.json("/loudacre/devices.json")
+
+// Join the list of device model totals with the list of devices
+// to get the make and model for each device
+val joinDevicesDF = orderDevicesDF.join(devDF,orderDevicesDF("device_id") === devDF("devnum"))
+
+// Write out the data with the correct columns
+joinDevicesDF.select("device_id","make","model","active_num").write.mode("overwrite").save("/loudacre/top_devices")
+
+

@@ -1,0 +1,20 @@
+# stub: query setup
+accountsDF = spark.read.table("accounts")
+activeAccountsDF = accountsDF.select("acct_num").where(accountsDF.acct_close_dt.isNotNull())
+accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+accountsDevsDF =  accountsDF.join(accountDeviceDF,accountDeviceDF.account_id == activeAccountsDF.acct_num)
+
+# solution
+accountsDevsDF.select("acct_num","first_name","last_name","device_id").show(5)
+accountsDevsDF.persist()
+accountsDevsDF.select("acct_num","first_name","last_name","device_id").show(5)
+accountsDevsDF.select("acct_num","first_name","last_name","device_id").show(5)
+
+# View Storage for Persisted Queries
+accountsDevsDF.write.mode("overwrite").save("/loudacre/accounts_devices")
+
+# Change the Storage Level for the Query
+accountsDevsDF.unpersist()
+from pyspark import StorageLevel  # We need this class for our next persist().
+accountsDevsDF.persist(StorageLevel.DISK_ONLY_2)
+accountsDevsDF.write.mode("overwrite").save("/loudacre/accounts_devices")

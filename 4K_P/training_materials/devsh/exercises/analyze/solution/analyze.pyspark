@@ -1,0 +1,64 @@
+# Create a DataFrame based on the Hive accounts table
+accountsDF = spark.read.table("accounts")
+
+# Perform a simple query using both syntaxes for column reference
+accountsDF.select(accountsDF["first_name"]).show()
+accountsDF.select(accountsDF.first_name).show()
+
+# Create a column reference referring to the first_name column in the accounts table
+fnCol = accountsDF["first_name"]
+
+# Create and use a column expression to select users named Lucy in the first_name column
+lucyCol = (fnCol == "Lucy")
+accountsDF.select(accountsDF.first_name,accountsDF.last_name,lucyCol).show()
+accountsDF.where(lucyCol).show(5)
+accountsDF.where(fnCol == "Lucy").show(5)
+
+accountsDF.select("city", "state", accountsDF.phone_number.substr(1,3)).show(5)
+accountsDF.select("city", "state", accountsDF.phone_number.substr(1,3).alias("area_code")).show(5)
+
+accountsDF.where(accountsDF.first_name.substr(1,2) == accountsDF.last_name.substr(1,2)).select("first_name","last_name").show(5)
+
+
+accountsDF.groupBy("last_name").count().show(5)
+accountsDF.groupBy("last_name","first_name").count().show(5)
+
+baseDF = spark.read.parquet("/loudacre/base_stations.parquet")
+
+accountsDF.select("acct_num","first_name","last_name","zipcode").join(baseDF, baseDF.zip==accountsDF.zipcode).show()
+
+
+# ------ Count active devices ---------
+
+
+# Load accountdevice data to HDFS in another terminal window
+# $ hdfs dfs -put $DEVDATA/accountdevice/ /loudacre/
+
+# Create a DataFrame from the account device data
+accountDeviceDF = spark.read.option("header","true").option("inferSchema","true").csv("/loudacre/accountdevice")
+
+# Create a DataFrame with only active accounts
+activeAccountsDF = accountsDF.where(accountsDF.acct_close_dt.isNull())
+
+# Create a DataFrame with a device model IDs for only devices used by active accounts
+activeAcctDevsDF =  accountDeviceDF.join(accountDeviceDF,activeAccountsDF.acct_num == accountDeviceDF.account_id).select("device_id")
+
+# Sum up the total number of each device model 
+sumDevicesDF = activeAcctDevsDF.groupBy("device_id").count().withColumnRenamed("count","active_num")
+
+# Order by count
+orderDevicesDF = sumDevicesDF.orderBy(sumDevicesDF.active_num.desc())
+
+# create a DataFrame based on the devices.json file
+devDF = spark.read.json("/loudacre/devices.json")
+
+# Join the list of device model totals with the list of devices
+# to get the make and model for each device
+joinDevicesDF = orderDevicesDF.join(devDF,sumDevicesDF.device_id == devDF.devnum)
+
+# Write out the data with the correct columns
+# use overwrite mode so solution can be run multiple times
+joinDevicesDF.select("device_id","make","model",joinDevicesDF.active_num).write.mode("overwrite").save("/loudacre/top_devices")
+
+# Review exercise results
+# $ parquet-tools head hdfs://master-1/loudacre/top_devices

@@ -1,0 +1,33 @@
+# $ hdfs dfs -put $DEVDATA/frostroad.txt /loudacre/
+
+# Create an RDD based on a data file
+myRDD = sc.textFile("/loudacre/frostroad.txt")
+
+# Count the number of elements in the RDD
+myRDD.count()
+
+# Return all the elements in the RDD as a list of strings
+lines = myRDD.collect()
+
+# Loop through and display the elements of the returned array
+for line in lines: print line
+
+# $ hdfs dfs -put $DEVDATA/makes*.txt /loudacre/
+
+# Read, union, and de-duplicate mobile device makes
+makes1RDD = sc.textFile("/loudacre/makes1.txt")
+for make in makes1RDD.collect(): print make
+
+makes2RDD = sc.textFile("/loudacre/makes2.txt")
+for make in makes2RDD.collect(): print make
+
+allMakesRDD = makes1RDD.union(makes2RDD)
+for make in allMakesRDD.collect(): print make
+
+distinctMakesRDD = allMakesRDD.distinct()
+for make in distinctMakesRDD.collect(): print make
+
+# Optional: explore other transformations
+for make in makes2RDD.zip(makes1RDD).collect(): print make
+for make in makes2RDD.intersection(makes1RDD).collect(): print make
+for make in makes2RDD.subtract(makes1RDD).collect(): print make

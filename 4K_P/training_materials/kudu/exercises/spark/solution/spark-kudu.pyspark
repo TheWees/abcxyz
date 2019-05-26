@@ -1,0 +1,32 @@
+# $ pyspark2 --packages org.apache.kudu:kudu-spark2_2.11:1.5.0
+
+kuduMaster = "master-2:7051"
+
+# Create a DataFrame based on an existing Kudu table
+accountsDF = spark.read.format("org.apache.kudu.spark.kudu").option("kudu.master",kuduMaster).option("kudu.table","impala::loudacre_kudu.accounts_kudu").load()
+accountsDF.printSchema()
+accountsDF.show(5)
+
+# Query a Kudu table using SQL
+accountsDF.createTempView("accounts_view")
+namesDF = spark.sql("SELECT acct_num, first_name, last_name FROM accounts_view")
+namesDF.show(5)
+
+# If necessary: 
+# DROP TABLE IF EXISTS loudacre_kudu.account_names_kudu
+# $ kudu table delete master-2:7051 account_names_kudu 
+
+# Create table in Impala:
+# CREATE TABLE loudacre_kudu.account_names_kudu (acct_num INTEGER, first_name STRING, last_name STRING, PRIMARY KEY (acct_num)) PARTITION BY HASH PARTITIONS 2 STORED AS KUDU TBLPROPERTIES('kudu.table_name' = 'account_names_kudu');
+# SELECT * FROM loudacre_kudu.account_names_kudu
+
+accountNamesDF = spark.read.format("org.apache.kudu.spark.kudu").option("kudu.master", kuduMaster). option("kudu.table", "account_names_kudu").load()
+accountNamesDF.printSchema()
+
+# Save data to table
+namesDF.write.format('org.apache.kudu.spark.kudu').option('kudu.master',kuduMaster).option('kudu.table','account_names_kudu').mode("append").save()
+
+testDF = spark.read.format("org.apache.kudu.spark.kudu").option("kudu.master",kuduMaster).option("kudu.table","account_names_kudu").load()
+testDF.printSchema()
+testDF.show(5)
+
