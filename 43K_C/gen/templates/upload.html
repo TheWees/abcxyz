@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</link>
+<title>J&J Commentaries Generator</title>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">
+            <img src="http://icons.iconarchive.com/icons/custom-icon-design/flatastic-9/512/Generate-tables-icon.png" 
+            width="50" height="50" alt="">
+            J&J Commentaries Generator
+        </a>
+    </nav>
+    <div class="container-fluid">
+        <form id="upload-form" method="POST" enctype="multipart/form-data">
+            <br/>
+            <strong>Upload your file here to begin:</strong><br>
+            <input id="file-picker" type="file" name="file"
+            accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <!-- removed multiple -->
+            <div id="msg"></div>
+            <br/>
+            <input type="submit" value="Process!" id="upload-button">
+        </form>
+        <br/>
+        <div id="time" style="font-size: small;"></div>
+        <div id="result" class="alert id-none"></div>
+    </div>
+</body>
+<script>
+    var filenameToDownload = null
+    $(document).ready(function() {
+		var socket = io.connect('http://localhost:5000');
+
+        socket.on('after connect', function(msg){
+            console.log('After connect', msg);
+        });
+        socket.on('processing', function(msg){
+            if($("#result").hasClass("d-none"))
+                $("#result").removeClass("d-none");
+            if(!$("#result").hasClass("alert-info"))
+                $("#result").addClass("alert-info");
+            $("#time").text("The time now is " + new Date().toLocaleString())
+            $("#result").text("We are now generating the comments for you, " +
+                "please wait 20 - 30 minutes while enjoying your favourite cup of coffee...");
+            $("#result").html($("#result").html().replace(/\n/g,'<br/>'));
+        });
+
+        $('#upload-form').on('submit', function(event) {
+            console.log("submitting...")
+            filenameToDownload = null
+            if($("#result").hasClass("alert-danger"))
+                $("#result").removeClass("alert-danger");
+            if($("#result").hasClass("alert-success"))
+                $("#result").removeClass("alert-success");
+            if($("#result").hasClass("alert-info"))
+                $("#result").removeClass("alert-info");
+            if(!$("#result").hasClass("d-none"))
+                $("#result").addClass("d-none");
+
+            $("#result").text("")
+            $("#time").text("")
+            let formData = new FormData($('#upload-form')[0]);
+
+            $.ajax({
+                type : 'POST',
+                enctype: 'multipart/form-data',
+                url : '/upload',
+                processData: false,
+                contentType: false,
+                cache: false,
+                data : formData
+            })
+            .done(function(data) {
+                if (data == "") {
+                    console.log("ERROR");
+                    if(!$("#result").hasClass("alert-danger"))
+                        $("#result").addClass("alert-danger");
+                    if($("#result").hasClass("alert-info"))
+                        $("#result").removeClass("alert-info");
+                    if($("#result").hasClass("d-none"))
+                        $("#result").removeClass("d-none");
+
+                    $("#result").text("The file cannot be processed. Please check your file content.")
+                }
+                else {
+                    console.log("SUCCESS : ", data);
+                    if(!$("#result").hasClass("alert-success"))
+                        $("#result").addClass("alert-success");
+                    if($("#result").hasClass("alert-info"))
+                        $("#result").removeClass("alert-info");
+                    if($("#result").hasClass("d-none"))
+                        $("#result").removeClass("d-none");
+                    
+                    action = "/download/" + data
+
+                    var link = $('<a href="' + action + '"  target="_blank"><button type=button">Download now!</a>')
+                    $("#time").text("The time now is " + new Date().toLocaleString())
+                    $("#result").text("Thanks for your patence! " + 
+                        "Comments generated is now ready for download here: ")
+                    $("#result").html($("#result").html().replace(/\n/g,'<br/>'));
+                    $("#result").append(link);
+                }
+
+            });
+            event.preventDefault();
+
+        });
+});
+
+</script>
+</html>
