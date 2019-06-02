@@ -1,0 +1,43 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf500
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c100000\c100000\c100000;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww15900\viewh10760\viewkind0
+\deftab720
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl360\partightenfactor0
+\ls1\ilvl0
+\f0\fs32 \cf2 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+The prediction was on Yelp Dataset whether each review is useful, based on the number of useful votes it received. The usefulness is a binary variable which is yes if there is at least 2 useful votes. We chose 2 as it happens to be greater than the mean (1.01) and is a form of 2 different reviewers agreeing with each other.\
+\pard\pardeftab720\sl360\partightenfactor0
+\cf2 \
+\uc0\u8232 \
+
+\fs24 -
+\fs32 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl360\partightenfactor0
+\ls2\ilvl0\cf2 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+The 3 approaches we used was Topic Modelling, Dictionary based Approach and\'a0Readability Analysis. For Topic Modelling we used 4 distinct topics The\'a0Topic Modelling results was to help us to come out with distinct custom dictionaries. We also use dictionaries from\'a0General Inquirer Category Listings. For Readability Analysis, we chose FOG.NRI as it stands out from the other metrics from the correlation with the dependent variable usefulness. On top of these features we also did some feature engineering using existing data.\
+\pard\pardeftab720\sl360\partightenfactor0
+\cf2 \
+\
+\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl360\partightenfactor0
+\ls3\ilvl0\cf2 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Stacking algorithm\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 		\expnd0\expndtw0\kerning0
+1) Split the data into train_level_0, train_level_1 and test in the ratio 7:2:1\uc0\u8232 2) Train each standalone models with train_level_0\u8232 3) Use each standalone model to predict on train_level_1\'a0to obtain a list of predictions in probability for each model and create a new dataframe A\'a0to hold these predictions, with the label usefulness\u8232 4)\'a0Train the meta learner\'a0with dataframe A\u8232 5) Repeat step 3 to predict on test data\'a0to create a new dataframe B\u8232 6) Use the meta learner to predict using dataframe B\u8232 \
+\ls3\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}(Summarised: \cb3 \expnd0\expndtw0\kerning0
+we split into train level 0, train level 1 and test data, using the\'a0train_level_1's\'a0prediction\'a0probabilities\'a0by the standalone models\'a0for training\'a0to finally\'a0use\'a0the meta learner to predict using test's prediction\'a0probabilities\'a0by the standalone models)\cb1 \uc0\u8232 \
+\ls3\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+We used AUC and Sensitivity.\'a0AUC was used as the main performance metric because it can provide an aggregate measure of the performance of a classification model at all classification thresholds. However, as the class labels of our data was a little unbalanced (1:5), sensitivity was also used as a secondary performance metric.\
+\pard\tx566\pardeftab720\sl360\partightenfactor0
+\cf2 \kerning1\expnd0\expndtw0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sl360\partightenfactor0
+\ls4\ilvl0\cf2 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Our best performing model was Neural Network. AUC: 0.856 0.863 +0.817%. Sensitivity: 0.723 0.747 +3.32%. Improvement is shown with feature engineering added. The top performing variables are\'a0user_fans_count, user_friends_count, and FOG.NRI\
+}
