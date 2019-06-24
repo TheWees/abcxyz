@@ -1,0 +1,271 @@
+---
+title: 'Network Term Project - For StartUp Network comparison with ScaleFRee and Random Networks'
+author: "Yvonne Er"
+date: "8 April 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Comparing the various network's distribution 
+   (1) Startup real network
+   (2) Random Network
+   (3) Small World Network
+
+## Nodes and Edge Overview
+```{r Nodes overview}
+## For South East Asia (CHN)
+# Number of node: 344
+# Number of Edge: 1502
+
+## For China (CHN)
+# Number of node: 803
+# Number of Edge: 13399
+```
+
+
+
+## Random Network SEA
+```{r Random Network}
+library(igraph)
+library(ggplot2)
+
+set.seed(5103)
+randomSEA <- erdos.renyi.game(344, 1502, type = "gnm", directed =FALSE, loops= FALSE)
+
+randomSEA_histtable<-as.data.frame(table(degree(randomSEA)))
+randomSEA_histtable$Var1 <- as.numeric(randomSEA_histtable$Var1)
+SEAp1<-ggplot(randomSEA_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                     limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("Random-SEA") +
+  theme(plot.title = element_text(color = "blue", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsSEA<-data.frame(Metrics = rbind("Avg Degree",
+                                    "Network Density",
+                                    "Avg Path Length",
+                                    "Clustering Coefficient", 
+                                    "Network Diameter"))
+
+MetricsSEA$SEA_Random<-rbind(mean(degree(randomSEA)),
+                        graph.density(randomSEA),
+                        average.path.length(randomSEA),
+                        transitivity(randomSEA,"global"),
+                        diameter(randomSEA))
+
+```
+
+## Small World Network SEA
+```{r Small World Network}
+
+set.seed(5103)
+smallworldSEA<- watts.strogatz.game(1, 344, 5, 0.6, loops = FALSE, multiple = TRUE)
+
+smallworldSEA_histtable<-as.data.frame(table(degree(smallworldSEA)))
+smallworldSEA_histtable$Var1 <- as.numeric(smallworldSEA_histtable$Var1)
+SEAp2<-ggplot(smallworldSEA_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("SmallWorld-SEA") +
+  theme(plot.title = element_text(color = "blue", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsSEA$SEA_SmallWorld<-rbind(mean(degree(smallworldSEA)),
+                        graph.density(smallworldSEA),
+                        average.path.length(smallworldSEA),
+                        transitivity(smallworldSEA,"global"),
+                        diameter(smallworldSEA))
+```
+
+## Scale Free SEA
+```{r}
+set.seed(5103)
+
+#scalefreeSEA <- barabasi.game(344, power = 1.6, m = NULL, out.dist = NULL, out.seq = NULL,                              out.pref = FALSE, zero.appeal = 1, directed = FALSE,algorithm ="psumtree", start.graph = NULL)
+
+scalefreeSEA<- static.power.law.game(344, 1502, exponent.out= 2.2, exponent.in = -1, 
+                                      loops = FALSE, multiple = FALSE, finite.size.correction = TRUE) 
+
+scalefreeSEA_histtable<-as.data.frame(table(degree(scalefreeSEA)))
+scalefreeSEA_histtable$Var1 <- as.numeric(scalefreeSEA_histtable$Var1)
+
+SEAp3<-ggplot(scalefreeSEA_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("ScaleFree-SEA") +
+  theme(plot.title = element_text(color = "blue", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsSEA$SEA_ScaleFree<-rbind(mean(degree(scalefreeSEA)),
+                        graph.density(scalefreeSEA),
+                        average.path.length(scalefreeSEA),
+                        transitivity(scalefreeSEA,"global"),
+                        diameter(scalefreeSEA))
+```
+
+
+## Real Network SEA
+```{r Real Network SEA}
+
+MetricsSEA$SEA_Real<-rbind("8.733",
+                        "0.025",
+                        "3.02",
+                        "0.786",
+                        "7")
+
+realSEA<-read.csv("SEA_Nodes_calculatedvalue2015.csv",header = TRUE)
+
+realSEA_histtable<-as.data.frame(table(realSEA$Degree))
+realSEA_histtable$Var1 <- as.numeric(realSEA_histtable$Var1)
+SEAp0<-ggplot(realSEA_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                    limits = c(0,100)) +
+  ggtitle("Real-SEA")+
+  theme(plot.title = element_text(color = "blue", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "grey92", colour = NA))
+```
+
+
+
+
+
+## Random Network CHN
+
+```{r random CHN}
+set.seed(5103)
+randomCHN <- erdos.renyi.game(803, 13399, type = "gnm", directed =FALSE, loops= FALSE)
+
+randomCHN_histtable<-as.data.frame(table(degree(randomCHN)))
+randomCHN_histtable$Var1 <- as.numeric(randomCHN_histtable$Var1)
+CHNp1<-ggplot(randomCHN_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                     limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("Random-CHN")+
+  theme(plot.title = element_text(color = "red", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsCHN<-data.frame(Metrics = rbind("Avg Degree",
+                                    "Network Density",
+                                    "Avg Path Length",
+                                    "Clustering Coefficient", 
+                                    "Network Diameter"))
+
+MetricsCHN$CHN_Random<-rbind(mean(degree(randomCHN)),
+                        graph.density(randomCHN),
+                        average.path.length(randomCHN),
+                        transitivity(randomCHN,"global"),
+                        diameter(randomCHN))
+
+```
+
+## Small World Network CHN
+```{r Small World Network}
+
+set.seed(5103)
+smallworldCHN<- watts.strogatz.game(1, 803, 5, 0.6, loops = FALSE, multiple = TRUE)
+
+smallworldCHN_histtable<-as.data.frame(table(degree(smallworldCHN)))
+smallworldCHN_histtable$Var1 <- as.numeric(smallworldCHN_histtable$Var1)
+CHNp2<-ggplot(smallworldCHN_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("SmallWorld-CHN")+
+  theme(plot.title = element_text(color = "red", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsCHN$CHN_SmallWorld<-rbind(mean(degree(smallworldCHN)),
+                        graph.density(smallworldCHN),
+                        average.path.length(smallworldCHN),
+                        transitivity(smallworldCHN,"global"),
+                        diameter(smallworldCHN))
+```
+
+
+## Scale Free
+```{r}
+set.seed(5103)
+scalefreeCHN<- static.power.law.game(803, 13399, exponent.out= 2.2, exponent.in = -1, 
+                                      loops = FALSE, multiple = FALSE, finite.size.correction = TRUE) 
+
+scalefreeCHN_histtable<-as.data.frame(table(degree(scalefreeCHN)))
+scalefreeCHN_histtable$Var1 <- as.numeric(scalefreeCHN_histtable$Var1)
+
+CHNp3<-ggplot(scalefreeCHN_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                     limits = c(0,100)) +
+  ggtitle("ScaleFree-CHN") +
+  theme(plot.title = element_text(color = "red", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid.major = element_line(colour = "grey88"))
+
+MetricsCHN$CHN_ScaleFree<-rbind(mean(degree(scalefreeCHN)),
+                        graph.density(scalefreeCHN),
+                        average.path.length(scalefreeCHN),
+                        transitivity(scalefreeCHN,"global"),
+                        diameter(scalefreeCHN))
+```
+
+
+## Real Network CHN
+```{r Real Network CHN}
+
+MetricsCHN$CHN_Real<-rbind("33.372",
+                        "0.042",
+                        "2.724",
+                        "0.817",
+                        "8")
+
+realCHN<-read.csv("CHN_Nodes_calculatedvalue2015.csv",header = TRUE)
+
+realCHN_histtable<-as.data.frame(table(realCHN$Degree))
+realCHN_histtable$Var1 <- as.numeric(realCHN_histtable$Var1)
+CHNp0<-ggplot(realCHN_histtable, aes(x = Var1, y = Freq)) + geom_line() +
+  scale_x_continuous("Degree",
+                      limits = c(0,25))+
+  scale_y_continuous("Frequency",
+                    limits = c(0,100)) +
+  ggtitle("Real-CHN")+
+  theme(plot.title = element_text(color = "red", size = 10, face = "bold"),
+        panel.background = element_rect(fill = "grey92", colour = NA))
+
+```
+
+
+##  comparison
+```{r SEA Comparison}
+
+#Summary of statistics
+MetricsSEA
+MetricsCHN
+#Degree Distribution graphs
+library(pdp)
+grid.arrange(SEAp0, SEAp1, SEAp2, SEAp3, 
+             CHNp0, CHNp1, CHNp2, CHNp3,
+             nrow = 2)
+
+```
+
+
+
